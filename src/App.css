@@ -1,0 +1,19 @@
+.App {
+  display: flex;
+  justify-content: center;
+  gap: 36px;
+}
+
+video {
+  transform: scale(-1, 1);
+  display: none;
+}
+
+.absoluteDiv {
+  position: absolute;
+  z-index: -1;
+}
+
+.vrm {
+
+}
