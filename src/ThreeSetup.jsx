@@ -12,6 +12,7 @@ import {
    Scene,
    DirectionalLight,
    Clock,
+   TextureLoader,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -115,6 +116,10 @@ export default function ThreeSetup() {
 
          (error) => console.error(error)
       );
+
+      var textureLoader = new TextureLoader();
+      var texture = textureLoader.load("./asset/hkuMB.jpg");
+      scene.background = texture;
 
       //* VRM helper function
       const rigPosition = (
