@@ -61,13 +61,21 @@ function CongfigMenu(): JSX.Element {
    }, []);
 
    return (
-      <div className={`w-screen h-screen bg-cover ${bgPath} pt-[10vh]`}>
-         <div className="mx-auto w-6/12 bg-slate-100/80 border rounded shadow py-8 px-16 min-w-[600px]">
-            <Typography id="title" variant="h4" className="text-center">
+      <div 
+      className={`w-screen h-screen bg-cover ${bgPath} pt-[10vh]`}
+      >
+         <div 
+         // className="mx-auto w-6/12 bg-slate-100/80 border rounded shadow py-8 px-16 min-w-[600px]"
+         >
+            <Typography id="title" variant="h4" 
+            // className="text-center"
+            >
                Platform Setting
             </Typography>
 
-            <div id="content" className="mt-16 flex justify-between">
+            <div id="content" 
+            // className="mt-16 flex justify-between"
+            >
                <div id="vrm-preview-div">
                   <Typography className="text-center" variant="h6">
                      {" "}
@@ -78,8 +86,12 @@ function CongfigMenu(): JSX.Element {
                   />
                </div>
 
-               <div id="config-div" className="flex flex-col gap-y-8">
-                  <div id="model-select" className="flex gap-x-4">
+               <div id="config-div" 
+               // className="flex flex-col gap-y-8"
+               >
+                  <div id="model-select" 
+                  // className="flex gap-x-4"
+                  >
                      <Typography variant="h6">Model:</Typography>
                      <Select
                         className="w-[120px]"
@@ -97,7 +109,7 @@ function CongfigMenu(): JSX.Element {
 
                   <video
                      id="webcam-preview"
-                     className="-scale-x-100 rounded"
+                     // className="-scale-x-100 rounded"
                      ref={webCamRef}
                   />
 

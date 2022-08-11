@@ -570,7 +570,9 @@ export default function VRMPlatform() {
 
    return (
       <>
-         <div className="absolute top-8 left-8">
+         <div 
+         // className="absolute top-8 left-8"
+         >
             <Link to="/">
                <Button variant="contained">
                   <ArrowBackIosNewIcon />
@@ -580,14 +582,16 @@ export default function VRMPlatform() {
 
          <video
             ref={videoRef}
-            className="absolute rounded shadow -scale-x-100 top-8 right-8 z-1"
+            // className="absolute rounded shadow -scale-x-100 top-8 right-8 z-1"
          />
          <canvas
             ref={skeletonRef}
-            className="absolute rounded shadow -scale-x-100 top-8 right-8"
+            // className="absolute rounded shadow -scale-x-100 top-8 right-8"
          />
 
-         <div className="absolute bottom-8 right-8">
+         <div 
+         // className="absolute bottom-8 right-8"
+         >
             <Button
                variant="contained"
                color="error"
