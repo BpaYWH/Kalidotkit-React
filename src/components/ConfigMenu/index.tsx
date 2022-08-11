@@ -12,7 +12,8 @@ import { AppContext } from "../../context/AppContext";
 import { hotkeyBgMap, hotkeyMusicMap, vrmMap } from "../../utils/constant";
 
 function CongfigMenu(): JSX.Element {
-   const { bgPath, setBgPath, musicPath, setMusicPath, setVrmPath } = useContext(AppContext);
+   const { bgPath, setBgPath, musicPath, setMusicPath, setVrmPath } =
+      useContext(AppContext);
    const [vrmPreview, setVrmPreview] = useState<string>(
       vrmMap[Object.keys(vrmMap)[0]].previewPath
    );
@@ -45,15 +46,18 @@ function CongfigMenu(): JSX.Element {
 
    useEffect(() => {
       const webCamEle = webCamRef.current;
+      let camera: Camera;
       if (webCamEle) {
-         setWebCam(
-            new Camera(webCamEle, {
-               onFrame: () => null,
-               width: 360,
-               height: 240,
-            })
-         );
+         camera = new Camera(webCamEle, {
+            onFrame: () => null,
+            width: 360,
+            height: 240,
+         });
+         setWebCam(camera);
       }
+      return () => {
+         camera.stop();
+      };
    }, []);
 
    return (
@@ -80,7 +84,7 @@ function CongfigMenu(): JSX.Element {
                      <Select
                         className="w-[120px]"
                         defaultValue={Object.keys(vrmMap)[0]}
-                        onChange={onSelectVrmModel}
+                        onChange={(e) => onSelectVrmModel(e)}
                         size="small"
                      >
                         {Object.keys(vrmMap).map((vrm, index) => (

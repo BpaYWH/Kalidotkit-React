@@ -1,7 +1,9 @@
+import React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import ReactPlayer from "react-player";
+import { Link } from "react-router-dom";
 
-import { Utils, Face, Pose, Hand, TFace, TPose } from "kalidokit";
+import { Utils, Face, Pose, Hand } from "kalidokit";
 import { lerp } from "three/src/math/MathUtils";
 import {
    Euler,
@@ -16,7 +18,7 @@ import {
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { GLTFNode, VRMSchema } from "@pixiv/three-vrm";
+import { VRMSchema } from "@pixiv/three-vrm";
 import { VRM } from "@pixiv/three-vrm";
 import { VRMUtils } from "@pixiv/three-vrm";
 import {
@@ -24,32 +26,36 @@ import {
    POSE_CONNECTIONS,
    FACEMESH_TESSELATION,
    HAND_CONNECTIONS,
-   Results,
 } from "@mediapipe/holistic";
 import { drawLandmarks, drawConnectors } from "@mediapipe/drawing_utils";
 import { Camera } from "@mediapipe/camera_utils";
 
-import { AppContext } from "../../context/AppContext";
+import CircleIcon from "@mui/icons-material/Circle";
+import PauseCircleIcon from "@mui/icons-material/PauseCircle";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 
-function VRMPlatform(): JSX.Element {
-   const { bgPath, musicPath, vrmPath } = useContext(AppContext);
+import { AppContext } from "../../context/AppContext";
+import { Button } from "@mui/material";
+
+export default function VRMPlatform() {
    const videoRef = useRef(null);
    const skeletonRef = useRef(null);
    const vrmRef = useRef(null);
 
-   const [webCam, setWebCam] = useState<Camera>();
-   const [recordState, setRecordState] = useState<boolean>(false);
-   const [vrmMediaRecorder, setVrmMediaRecorder] = useState<MediaRecorder>();
-   const [webCamMediaRecorder, setWebCamMediaRecorder] =
-      useState<MediaRecorder>();
+   const { bgPath, musicPath, vrmPath } = useContext(AppContext);
 
-   let vrmVideoChunk: Blob[] = [];
-   let webCamVideoChunk: Blob[] = [];
+   const [webCam, setWebCam] = useState<Camera>();
+   const [isRecording, setIsRecording] = useState<boolean>(false);
+   const [vrmMediaRecorder, setVrmMediaRecorder] = useState();
+   const [webCamMediaRecorder, setWebCamMediaRecorder] = useState();
+
+   let vrmVideoChunk = [];
+   let webCamVideoChunk = [];
 
    let currentVrm: VRM;
 
-   const saveVrmVideo = (): void => {
-      const vrmBlob = new Blob(vrmVideoChunk, { type: "video/mp4" });
+   const saveVrmVideo = () => {
+      let vrmBlob = new Blob(vrmVideoChunk, { type: "video/mp4" });
 
       vrmVideoChunk = [];
 
@@ -65,8 +71,8 @@ function VRMPlatform(): JSX.Element {
 
       vrmLink.click();
    };
-   const saveWebCamVideo = (): void => {
-      const webCamBlob = new Blob(webCamVideoChunk, { type: "video/mp4" });
+   const saveWebCamVideo = () => {
+      let webCamBlob = new Blob(webCamVideoChunk, { type: "video/mp4" });
       webCamVideoChunk = [];
       const webCamUrl = URL.createObjectURL(webCamBlob);
       const webCamLink = document.createElement("a");
@@ -75,21 +81,23 @@ function VRMPlatform(): JSX.Element {
       document.body.appendChild(webCamLink);
       webCamLink.click();
    };
-   const recordVrmData = (e: BlobEvent): void => {
+   const recordVrmData = (e) => {
       vrmVideoChunk.push(e.data);
    };
-   const recordWebCamData = (e: BlobEvent): void => {
+   const recordWebCamData = (e) => {
       webCamVideoChunk.push(e.data);
    };
-   const startRecord = (): void => {
-      vrmMediaRecorder?.start();
-      webCamMediaRecorder?.start();
-      setRecordState(true);
-   };
-   const stopRecord = (): void => {
-      vrmMediaRecorder?.stop();
-      webCamMediaRecorder?.stop();
-      setRecordState(false);
+   const controlRecording = (): void => {
+      if (isRecording) {
+         vrmMediaRecorder.stop();
+         webCamMediaRecorder.stop();
+         setIsRecording(false);
+         return;
+      }
+      vrmMediaRecorder.start();
+      webCamMediaRecorder.start();
+      setIsRecording(true);
+      return;
    };
 
    //***************** Three js basic element setup *******************//
@@ -107,15 +115,13 @@ function VRMPlatform(): JSX.Element {
 
       const renderer = new WebGLRenderer({
          alpha: true,
-         canvas: vrmRef.current || undefined,
-      });
+         canvas: vrmRef.current,
+      }); // html body becomes background
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(window.devicePixelRatio);
 
-      // vrmRef.current.appendChild(renderer.domElement);
-
       const orbitControls = new OrbitControls(camera, renderer.domElement);
-      orbitControls.screenSpacePanning = true;
+      orbitControls.screenSpacePaninng = true;
       orbitControls.target.set(0.0, 1.4, 0.0);
       orbitControls.update();
 
@@ -137,11 +143,10 @@ function VRMPlatform(): JSX.Element {
 
       //************************ VRM character setup *******************************//
       const loader = new GLTFLoader();
-      loader.crossOrigin = "anonymous";
+      // loader.crossOrigin = "anonymous";
 
       loader.load(
          vrmPath,
-
          (gltf) => {
             VRMUtils.removeUnnecessaryJoints(gltf.scene);
 
@@ -163,26 +168,26 @@ function VRMPlatform(): JSX.Element {
       );
 
       const textureLoader = new TextureLoader();
-      const texture = textureLoader.load(bgPath);
+      const texture = textureLoader.load("");
       scene.background = texture;
 
       //* VRM helper function
       const rigPosition = (
-         name: VRMSchema.HumanoidBoneName,
+         name,
          position = { x: 0, y: 0, z: 0 },
          dampener = 1,
          lerpAmount = 0.3
-      ): void => {
+      ) => {
          if (!currentVrm) {
             return;
          }
-         const Part = currentVrm.humanoid?.getBoneNode(
+         const Part = currentVrm.humanoid.getBoneNode(
             VRMSchema.HumanoidBoneName[name]
          );
          if (!Part) {
             return;
          }
-         const vector = new Vector3(
+         let vector = new Vector3(
             position.x * dampener,
             position.y * dampener,
             position.z * dampener
@@ -190,7 +195,7 @@ function VRMPlatform(): JSX.Element {
          Part.position.lerp(vector, lerpAmount);
       };
       const rigRotation = (
-         name: VRMSchema.HumanoidBoneName,
+         name,
          rotation = { x: 0, y: 0, z: 0 },
          dampener = 1,
          lerpAmount = 0.3
@@ -198,27 +203,28 @@ function VRMPlatform(): JSX.Element {
          if (!currentVrm) {
             return;
          }
-         const Part: GLTFNode | null | undefined =
-            currentVrm.humanoid?.getBoneNode(VRMSchema.HumanoidBoneName[name]);
+         const Part = currentVrm.humanoid.getBoneNode(
+            VRMSchema.HumanoidBoneName[name]
+         );
          if (!Part) {
             return;
          }
 
-         const euler: Euler = new Euler(
+         let euler = new Euler(
             rotation.x * dampener,
             rotation.y * dampener,
             rotation.z * dampener,
             rotation.rotationOrder || "XYZ"
          );
-         const quaternion = new Quaternion().setFromEuler(euler);
+         let quaternion = new Quaternion().setFromEuler(euler);
          Part.quaternion.slerp(quaternion, lerpAmount);
       };
-      const oldLookTarget = new Euler();
-      const rigFace = (riggedFace: TFace | undefined): void => {
+      let oldLookTarget = new Euler();
+      const rigFace = (riggedFace) => {
          if (!currentVrm) {
             return;
          }
-         rigRotation(VRMSchema.HumanoidBoneName.Neck, riggedFace?.head, 0.7);
+         rigRotation("Neck", riggedFace.head, 0.7);
 
          const Blendshape = currentVrm.blendShapeProxy;
          const PresetName = VRMSchema.BlendShapePresetName;
@@ -294,10 +300,7 @@ function VRMPlatform(): JSX.Element {
       const animateVRM = (vrm, results) => {
          if (!vrm) return;
 
-         let riggedPose: TPose | undefined,
-            riggedLeftHand,
-            riggedRightHand,
-            riggedFace: TFace | undefined;
+         let riggedPose, riggedLeftHand, riggedRightHand, riggedFace;
 
          const faceLandmarks = results.faceLandmarks;
          const pose3DLandmarks = results.ea;
@@ -317,224 +320,130 @@ function VRMPlatform(): JSX.Element {
                runtime: "mediapipe",
                video: videoElement,
             });
-            rigRotation(
-               VRMSchema.HumanoidBoneName.Hips,
-               riggedPose?.Hips.rotation,
-               0.7
-            );
+            rigRotation("Hips", riggedPose.Hips.rotation, 0.7);
             rigPosition(
-               VRMSchema.HumanoidBoneName.Hips,
+               "Hips",
                {
-                  x: riggedPose?.Hips.position.x, // Reverse direction
-                  y: riggedPose?.Hips.position.y + 1, // Add a bit of height
-                  z: -riggedPose?.Hips.position.z, // Reverse direction
+                  x: riggedPose.Hips.position.x, // Reverse direction
+                  y: riggedPose.Hips.position.y + 1, // Add a bit of height
+                  z: -riggedPose.Hips.position.z, // Reverse direction
                },
                1,
                0.07
             );
 
-            rigRotation(
-               VRMSchema.HumanoidBoneName.Chest,
-               riggedPose?.Spine,
-               0.25,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.Spine,
-               riggedPose?.Spine,
-               0.45,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightUpperArm,
-               riggedPose?.RightUpperArm,
-               1,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightLowerArm,
-               riggedPose?.RightLowerArm,
-               1,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftUpperArm,
-               riggedPose?.LeftUpperArm,
-               1,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftLowerArm,
-               riggedPose?.LeftLowerArm,
-               1,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftUpperLeg,
-               riggedPose?.LeftUpperLeg,
-               1,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftLowerLeg,
-               riggedPose?.LeftLowerLeg,
-               1,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightUpperLeg,
-               riggedPose?.RightUpperLeg,
-               1,
-               0.3
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightLowerLeg,
-               riggedPose?.RightLowerLeg,
-               1,
-               0.3
-            );
+            rigRotation("Chest", riggedPose.Spine, 0.25, 0.3);
+            rigRotation("Spine", riggedPose.Spine, 0.45, 0.3);
+
+            rigRotation("RightUpperArm", riggedPose.RightUpperArm, 1, 0.3);
+            rigRotation("RightLowerArm", riggedPose.RightLowerArm, 1, 0.3);
+            rigRotation("LeftUpperArm", riggedPose.LeftUpperArm, 1, 0.3);
+            rigRotation("LeftLowerArm", riggedPose.LeftLowerArm, 1, 0.3);
+
+            rigRotation("LeftUpperLeg", riggedPose.LeftUpperLeg, 1, 0.3);
+            rigRotation("LeftLowerLeg", riggedPose.LeftLowerLeg, 1, 0.3);
+            rigRotation("RightUpperLeg", riggedPose.RightUpperLeg, 1, 0.3);
+            rigRotation("RightLowerLeg", riggedPose.RightLowerLeg, 1, 0.3);
          }
          if (leftHandLandmarks) {
             riggedLeftHand = Hand.solve(leftHandLandmarks, "Left");
-            rigRotation(VRMSchema.HumanoidBoneName.LeftHand, {
-               z: riggedPose?.LeftHand.z,
-               y: riggedLeftHand?.LeftWrist.y,
-               x: riggedLeftHand?.LeftWrist.x,
+            rigRotation("LeftHand", {
+               z: riggedPose.LeftHand.z,
+               y: riggedLeftHand.LeftWrist.y,
+               x: riggedLeftHand.LeftWrist.x,
             });
+            rigRotation("LeftRingProximal", riggedLeftHand.LeftRingProximal);
             rigRotation(
-               VRMSchema.HumanoidBoneName.LeftRingProximal,
-               riggedLeftHand?.LeftRingProximal
+               "LeftRingIntermediate",
+               riggedLeftHand.LeftRingIntermediate
+            );
+            rigRotation("LeftRingDistal", riggedLeftHand.LeftRingDistal);
+            rigRotation("LeftIndexProximal", riggedLeftHand.LeftIndexProximal);
+            rigRotation(
+               "LeftIndexIntermediate",
+               riggedLeftHand.LeftIndexIntermediate
+            );
+            rigRotation("LeftIndexDistal", riggedLeftHand.LeftIndexDistal);
+            rigRotation(
+               "LeftMiddleProximal",
+               riggedLeftHand.LeftMiddleProximal
             );
             rigRotation(
-               VRMSchema.HumanoidBoneName.LeftRingIntermediate,
-               riggedLeftHand?.LeftRingIntermediate
+               "LeftMiddleIntermediate",
+               riggedLeftHand.LeftMiddleIntermediate
+            );
+            rigRotation("LeftMiddleDistal", riggedLeftHand.LeftMiddleDistal);
+            rigRotation("LeftThumbProximal", riggedLeftHand.LeftThumbProximal);
+            rigRotation(
+               "LeftThumbIntermediate",
+               riggedLeftHand.LeftThumbIntermediate
+            );
+            rigRotation("LeftThumbDistal", riggedLeftHand.LeftThumbDistal);
+            rigRotation(
+               "LeftLittleProximal",
+               riggedLeftHand.LeftLittleProximal
             );
             rigRotation(
-               VRMSchema.HumanoidBoneName.LeftRingDistal,
-               riggedLeftHand?.LeftRingDistal
+               "LeftLittleIntermediate",
+               riggedLeftHand.LeftLittleIntermediate
             );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftIndexProximal,
-               riggedLeftHand?.LeftIndexProximal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftIndexIntermediate,
-               riggedLeftHand?.LeftIndexIntermediate
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftIndexDistal,
-               riggedLeftHand?.LeftIndexDistal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftMiddleProximal,
-               riggedLeftHand?.LeftMiddleProximal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftMiddleIntermediate,
-               riggedLeftHand?.LeftMiddleIntermediate
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftMiddleDistal,
-               riggedLeftHand?.LeftMiddleDistal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftThumbProximal,
-               riggedLeftHand?.LeftThumbProximal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftThumbIntermediate,
-               riggedLeftHand?.LeftThumbIntermediate
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftThumbDistal,
-               riggedLeftHand?.LeftThumbDistal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftLittleProximal,
-               riggedLeftHand?.LeftLittleProximal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftLittleIntermediate,
-               riggedLeftHand?.LeftLittleIntermediate
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.LeftLittleDistal,
-               riggedLeftHand?.LeftLittleDistal
-            );
+            rigRotation("LeftLittleDistal", riggedLeftHand.LeftLittleDistal);
          }
          if (rightHandLandmarks) {
             riggedRightHand = Hand.solve(rightHandLandmarks, "Right");
-            rigRotation(VRMSchema.HumanoidBoneName.RightHand, {
+            rigRotation("RightHand", {
                z: riggedPose.RightHand.z,
                y: riggedRightHand.RightWrist.y,
                x: riggedRightHand.RightWrist.x,
             });
+            rigRotation("RightRingProximal", riggedRightHand.RightRingProximal);
             rigRotation(
-               VRMSchema.HumanoidBoneName.RightRingProximal,
-               riggedRightHand?.RightRingProximal
+               "RightRingIntermediate",
+               riggedRightHand.RightRingIntermediate
+            );
+            rigRotation("RightRingDistal", riggedRightHand.RightRingDistal);
+            rigRotation(
+               "RightIndexProximal",
+               riggedRightHand.RightIndexProximal
             );
             rigRotation(
-               VRMSchema.HumanoidBoneName.RightRingIntermediate,
-               riggedRightHand?.RightRingIntermediate
+               "RightIndexIntermediate",
+               riggedRightHand.RightIndexIntermediate
+            );
+            rigRotation("RightIndexDistal", riggedRightHand.RightIndexDistal);
+            rigRotation(
+               "RightMiddleProximal",
+               riggedRightHand.RightMiddleProximal
             );
             rigRotation(
-               VRMSchema.HumanoidBoneName.RightRingDistal,
-               riggedRightHand?.RightRingDistal
+               "RightMiddleIntermediate",
+               riggedRightHand.RightMiddleIntermediate
+            );
+            rigRotation("RightMiddleDistal", riggedRightHand.RightMiddleDistal);
+            rigRotation(
+               "RightThumbProximal",
+               riggedRightHand.RightThumbProximal
             );
             rigRotation(
-               VRMSchema.HumanoidBoneName.RightIndexProximal,
-               riggedRightHand?.RightIndexProximal
+               "RightThumbIntermediate",
+               riggedRightHand.RightThumbIntermediate
+            );
+            rigRotation("RightThumbDistal", riggedRightHand.RightThumbDistal);
+            rigRotation(
+               "RightLittleProximal",
+               riggedRightHand.RightLittleProximal
             );
             rigRotation(
-               VRMSchema.HumanoidBoneName.RightIndexIntermediate,
-               riggedRightHand?.RightIndexIntermediate
+               "RightLittleIntermediate",
+               riggedRightHand.RightLittleIntermediate
             );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightIndexDistal,
-               riggedRightHand?.RightIndexDistal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightMiddleProximal,
-               riggedRightHand?.RightMiddleProximal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightMiddleIntermediate,
-               riggedRightHand?.RightMiddleIntermediate
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightMiddleDistal,
-               riggedRightHand?.RightMiddleDistal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightThumbProximal,
-               riggedRightHand?.RightThumbProximal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightThumbIntermediate,
-               riggedRightHand?.RightThumbIntermediate
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightThumbDistal,
-               riggedRightHand?.RightThumbDistal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightLittleProximal,
-               riggedRightHand?.RightLittleProximal
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightLittleIntermediate,
-               riggedRightHand?.RightLittleIntermediate
-            );
-            rigRotation(
-               VRMSchema.HumanoidBoneName.RightLittleDistal,
-               riggedRightHand?.RightLittleDistal
-            );
+            rigRotation("RightLittleDistal", riggedRightHand.RightLittleDistal);
          }
       };
 
-      const drawResults = (results: Results) => {
-         guideCanvas.width = videoElement?.videoWidth || 0;
-         guideCanvas.height = videoElement?.videoHeight || 0;
+      const drawResults = (results) => {
+         guideCanvas.width = videoElement.videoWidth;
+         guideCanvas.height = videoElement.videoHeight;
          let canvasCtx = guideCanvas.getContext("2d");
          canvasCtx.save();
          canvasCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
@@ -595,14 +504,14 @@ function VRMPlatform(): JSX.Element {
          });
       };
 
-      const onResults = (results: Results) => {
+      const onResults = (results) => {
          drawResults(results);
          animateVRM(currentVrm, results);
       };
 
       const holistic = new Holistic({
          locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1635989137/${file}`;
+            return `../../../node_modules/@mediapipe/holistic/${file}`;
          },
       });
 
@@ -615,28 +524,29 @@ function VRMPlatform(): JSX.Element {
       });
       holistic.onResults(onResults);
 
-      const videoElement = videoRef.current;
-      const guideCanvas = skeletonRef.current;
+      let videoElement = videoRef.current;
+      let guideCanvas = skeletonRef.current;
+      let webCamera: Camera;
 
-      setWebCam(
-         new Camera(videoElement, {
+      if (videoElement) {
+         webCamera = new Camera(videoElement, {
             onFrame: async () => {
                await holistic.send({ image: videoElement });
             },
             width: 480,
-            height: 320,
-         })
-      );
+            height: 360,
+         });
+
+         setWebCam(webCamera);
+      }
 
       return () => {
-         console.log("cleaning up Scene");
+         webCamera.stop();
       };
    }, []);
 
    useEffect(() => {
-      if (webCam) {
-         webCam.start();
-      }
+      webCam?.start();
    }, [webCam]);
 
    useEffect(() => {
@@ -660,20 +570,40 @@ function VRMPlatform(): JSX.Element {
 
    return (
       <>
-         <video id="webCam" ref={videoRef} className="-scale-x-100 rounded shadow absolute" />
-         <canvas ref={skeletonRef} className="-scale-x-100 rounded shadow" />
-
-         <p>{recordState ? "Recording" : "Not recording"}</p>
-         <button onClick={startRecord}>Start Record</button>
-         <button onClick={stopRecord}>Stop Record</button>
-
-         <div className="absolute">
-            <canvas ref={vrmRef} className={`${bgPath}`} />
+         <div className="absolute top-8 left-8">
+            <Link to="/">
+               <Button variant="contained">
+                  <ArrowBackIosNewIcon />
+               </Button>
+            </Link>
          </div>
+
+         <video
+            ref={videoRef}
+            className="absolute rounded shadow -scale-x-100 top-8 right-8 z-1"
+         />
+         <canvas
+            ref={skeletonRef}
+            className="absolute rounded shadow -scale-x-100 top-8 right-8"
+         />
+
+         <div className="absolute bottom-8 right-8">
+            <Button
+               variant="contained"
+               color="error"
+               startIcon={isRecording ? <PauseCircleIcon /> : <CircleIcon />}
+               onClick={controlRecording}
+            >
+               Rec
+            </Button>
+         </div>
+
+         <canvas
+            ref={vrmRef}
+            className={`absolute bg-cover bg-no-repeat ${bgPath} z-[-1]`}
+         />
 
          <ReactPlayer url={musicPath} playing loop controls={false} hidden />
       </>
    );
 }
-
-export default VRMPlatform;

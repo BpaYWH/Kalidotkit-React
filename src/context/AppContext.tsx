@@ -1,6 +1,8 @@
 import React, { createContext, useReducer } from "react";
 import AppReducer from "./AppReducer";
 
+import { vrmMap } from "../utils/constant";
+
 export const AppContext = createContext<any>({});
 
 interface AppProviderProp {
@@ -11,7 +13,7 @@ function AppProvider({ children }: AppProviderProp): JSX.Element {
    const initialState = {
       bgPath: "",
       musicPath: "",
-      vrmPath: ""
+      vrmPath: vrmMap[Object.keys(vrmMap)[0]].vrmPath
    };
 
    const [state, dispatch] = useReducer(AppReducer, initialState);
