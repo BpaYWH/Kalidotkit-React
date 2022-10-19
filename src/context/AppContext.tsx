@@ -11,13 +11,14 @@ interface AppProviderProp {
 
 function AppProvider({ children }: AppProviderProp): JSX.Element {
    const initialState = {
-      bgPath: "",
+      bgPath: "bg-[url('/src/asset/background/hkuMB.jpg')]",
       musicPath: "",
+      windowSize: "large",
       vrmPath: vrmMap[Object.keys(vrmMap)[0]].vrmPath
    };
 
    const [state, dispatch] = useReducer(AppReducer, initialState);
-   const { bgPath, musicPath, vrmPath } = state;
+   const { bgPath, musicPath, vrmPath, windowSize } = state;
 
    const setBgPath = (path: string): void => dispatch({
       type: "SET_BG_PATH",
@@ -34,13 +35,20 @@ function AppProvider({ children }: AppProviderProp): JSX.Element {
       payload: path
    });
 
+   const setWindowSize = (size: string): void => dispatch({
+      type: "SET_WINDOW_SIZE",
+      payload: size
+   });
+
    const context = {
       bgPath: bgPath,
       setBgPath: setBgPath,
       musicPath: musicPath,
       setMusicPath: setMusicPath,
       vrmPath: vrmPath,
-      setVrmPath: setVrmPath
+      setVrmPath: setVrmPath,
+      windowSize: windowSize,
+      setWindowSize: setWindowSize
    }
 
    return <AppContext.Provider value={context}>{children}</AppContext.Provider>;

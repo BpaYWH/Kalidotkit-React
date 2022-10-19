@@ -12,7 +12,11 @@ import { AppContext } from "../../context/AppContext";
 import { hotkeyBgMap, hotkeyMusicMap, vrmMap } from "../../utils/constant";
 
 function CongfigMenu(): JSX.Element {
-   const { bgPath, setBgPath, musicPath, setMusicPath, setVrmPath } =
+   const inputFile = useRef(null) 
+   // console.log("The file is " + inputFile)
+
+   const [selectedF, setSelectedF] = useState("null");
+   const { bgPath, setBgPath, musicPath, setMusicPath, setVrmPath, windowSize, setWindowSize } =
       useContext(AppContext);
    const [vrmPreview, setVrmPreview] = useState<string>(
       vrmMap[Object.keys(vrmMap)[0]].previewPath
@@ -34,6 +38,15 @@ function CongfigMenu(): JSX.Element {
       setVrmPreview(vrmMap[e.target.value].previewPath);
    };
 
+   const ChangeWindowSize = () => {
+      if (windowSize == "large"){
+         setWindowSize("small")
+      }else{
+         setWindowSize("large")
+      }
+      console.log(windowSize)
+   }
+
    useEffect(() => {
       if (webCam) {
          if (isTestingWebCam) {
@@ -44,20 +57,21 @@ function CongfigMenu(): JSX.Element {
       }
    }, [isTestingWebCam]);
 
+
    useEffect(() => {
       const webCamEle = webCamRef.current;
       let camera: Camera;
       if (webCamEle) {
          camera = new Camera(webCamEle, {
             onFrame: () => null,
-            width: 360,
-            height: 240,
+            width: windowSize,
+            height: windowSize * 0.75,
          });
          setWebCam(camera);
       }
       return () => {
          camera.stop();
-      };
+      };                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
    }, []);
 
    return (
@@ -107,6 +121,14 @@ function CongfigMenu(): JSX.Element {
                      variant="contained"
                   >
                      {isTestingWebCam ? "Stop Testing Camera" : "Test Camera"}
+                  </Button>
+                  
+                  <Button
+                     color={windowSize == "large" ? "error" : "primary"}
+                     variant="contained"
+                     onClick={() => ChangeWindowSize()}
+                  >
+                     {windowSize == "large"? "Large Window" : "Small Window"}
                   </Button>
 
                   <Link to="/platform">

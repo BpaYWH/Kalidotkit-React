@@ -33,6 +33,8 @@ import { Camera } from "@mediapipe/camera_utils";
 import CircleIcon from "@mui/icons-material/Circle";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 import { AppContext } from "../../context/AppContext";
 import { Button } from "@mui/material";
@@ -42,17 +44,37 @@ export default function VRMPlatform() {
    const skeletonRef = useRef(null);
    const vrmRef = useRef(null);
 
-   const { bgPath, musicPath, vrmPath } = useContext(AppContext);
+   const { bgPath, musicPath, vrmPath, windowSize } = useContext(AppContext);
+   let size;
+   if (windowSize == "large"){
+      size = 480;
+   }else{
+      size = 240;
+   }
+   console.log("Window size: "+windowSize)
 
    const [webCam, setWebCam] = useState<Camera>();
    const [isRecording, setIsRecording] = useState<boolean>(false);
    const [vrmMediaRecorder, setVrmMediaRecorder] = useState();
    const [webCamMediaRecorder, setWebCamMediaRecorder] = useState();
+   const [windowWidth, setWindowWidth] = useState(480)
+   // let [windowHeight, setWindowHeight] = useState(360)
 
    let vrmVideoChunk = [];
    let webCamVideoChunk = [];
-
    let currentVrm: VRM;
+
+   const largerWin = () => {
+      // setWindowHeight(Math.ceil(windowHeight * 1.1))
+      setWindowWidth(Math.ceil(windowWidth * 1.1))
+      console.log(windowWidth)
+   };
+
+   const smallerWin = () => {
+      // setWindowHeight(Math.ceil(windowHeight / 1.1))
+      setWindowWidth(Math.ceil(windowWidth / 1.1))
+      console.log(windowWidth)
+   };
 
    const saveVrmVideo = () => {
       let vrmBlob = new Blob(vrmVideoChunk, { type: "video/mp4" });
@@ -533,8 +555,8 @@ export default function VRMPlatform() {
             onFrame: async () => {
                await holistic.send({ image: videoElement });
             },
-            width: 480,
-            height: 360,
+            width: size,
+            height: size * 0.75,
          });
 
          setWebCam(webCamera);
@@ -580,12 +602,28 @@ export default function VRMPlatform() {
 
          <video
             ref={videoRef}
-            className="absolute rounded shadow -scale-x-100 top-8 right-8 z-1"
+            className={`absolute rounded shadow -scale-x-100 top-8 right-8 z-1 w-[${windowWidth}px]`}
+            // className={`absolute rounded shadow -scale-x-100 top-8 right-8 z-1 w-[${windowWidth}px] h-[${windowHeight}px]`}
          />
          <canvas
             ref={skeletonRef}
-            className="absolute rounded shadow -scale-x-100 top-8 right-8"
+            className={`absolute rounded shadow -scale-x-100 top-8 right-8 z-1 w-[${windowWidth}px]`}
+            // className={`absolute rounded shadow -scale-x-100 top-8 right-8 z-1 w-[${windowWidth}px] h-[${windowHeight}px]`}
          />
+      {/* <Button
+            variant="contained"
+            color="primary"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+            startIcon={ <AddIcon/>}
+            onClick={largerWin}
+         >
+         </Button>
+         <Button
+            variant="contained"
+            color="primary"
+            startIcon={ <RemoveIcon/>}
+            onClick={smallerWin}
+         >
+         </Button> */}
 
          <div className="absolute bottom-8 right-8">
             <Button

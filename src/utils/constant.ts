@@ -11,17 +11,21 @@ interface IVrmMap {
 }
 
 export const hotkeyBgMap: IHotkeyMap = {
-   "1": "bg-[url('/src/asset/background/bg1.jpg')]",
-   "2": "bg-[url('/src/asset/background/bg2.jpg')]",
-   "3": "bg-[url('/src/asset/background/bg3.jpeg')]",
-   "4": "bg-[url('/src/asset/background/bg4.jpeg')]",
-   "5": "",
+   "1": "bg-[url('/src/asset/background/bg1.JPG')]",
+   "2": "bg-[url('/src/asset/background/bg2.JPG')]",
+   "3": "bg-[url('/src/asset/background/bg3.JPG')]",
+   "4": "bg-[url('/src/asset/background/bg4.JPG')]",
+   "5": "bg-[url('/src/asset/background/bg5.JPG')]",
+   "6": "bg-[url('/src/asset/background/bg6.JPG')]",
+   "7": "bg-[url('/src/asset/background/bg7.JPG')]",
+   "8": "bg-[url('/src/asset/background/bg8.JPG')]",
+   "9": "",
 };
 
 export const hotkeyMusicMap: IHotkeyMap = {
-   "6": "/src/asset/bgm/bgm1.mp3",
-   "7": "/src/asset/bgm/bgm2.mp3",
-   "0": "",
+   "a": "",
+   "s": "",
+   "d": "",
 };
 
 export const vrmMap: IVrmMap = {
@@ -31,7 +35,22 @@ export const vrmMap: IVrmMap = {
    },
    Ashtra: {
       vrmPath:
-         "https://cdn.glitch.com/29e07830-2317-4b15-a044-135e73c7f840%2FAshtra.vrm?v=1630342336981",
+         "/src/asset/model/ashtra.vrm",
       previewPath: "bg-[url('/src/asset/modelPreview/vrmPreview-ashtra.PNG')]",
+   },
+   student: {
+      vrmPath:
+         "/src/asset/model/AvatarSampleCstudent.vrm",
+      previewPath: "bg-[url('/src/asset/modelPreview/AvatarSampleCstudent.png')]",
+   },
+   camome: {
+      vrmPath:
+         "/src/asset/model/camome.vrm",
+      previewPath: "bg-[url('/src/asset/modelPreview/vrmPreview-camome.png')]",
+   },
+   VRoidVRM: {
+      vrmPath:
+         "/src/asset/model/VRoidVRM.vrm",
+      previewPath: "bg-[url('/src/asset/modelPreview/VRoidVRM.png')]",
    },
 };

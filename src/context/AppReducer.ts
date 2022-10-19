@@ -2,6 +2,7 @@ interface AppState {
    bgPath: string;
    musicPath: string;
    vrmPath: string;
+   windowSize: string;
 }
 
 interface AppAction {
@@ -28,6 +29,13 @@ const AppReducer = (state: AppState, action: AppAction): AppState => {
             ...state,
             vrmPath: action.payload
          };
+
+      case "SET_WINDOW_SIZE":
+         return {
+            ...state,
+            windowSize: action.payload
+         };
+   
 
       default:
          return state;
